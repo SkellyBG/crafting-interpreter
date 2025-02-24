@@ -1,4 +1,5 @@
 mod scanner;
+mod token;
 
 use scanner::Scanner;
 
@@ -8,7 +9,7 @@ pub fn run(byte: String) {
     let tokens = scanner.scan_tokens();
 
     for token in tokens {
-        println!("{:?}", token);
+        println!("{}", token);
     }
 }
 

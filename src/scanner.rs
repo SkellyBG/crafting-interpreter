@@ -1,7 +1,6 @@
-pub struct Scanner {}
+use crate::token::Token;
 
-#[derive(Debug)]
-pub struct Token {}
+pub struct Scanner {}
 
 impl Scanner {
     pub fn new(byte: String) -> Self {
