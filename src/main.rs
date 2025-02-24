@@ -35,7 +35,7 @@ fn run_prompt() -> Result<(), Box<dyn Error + 'static>> {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let args: Vec<String> = env::args().collect();
+    let args: Vec<String> = env::args().skip(1).collect();
 
     match args.len() {
         0 => run_prompt(),
