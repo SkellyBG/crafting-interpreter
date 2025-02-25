@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 #[derive(Debug)]
 pub enum TokenType {
     LeftParen,
@@ -21,9 +23,9 @@ pub enum TokenType {
     Less,
     LessEqual,
 
-    Identifier,
-    String,
-    Number,
+    Identifier(String),
+    String(String),
+    Number(i64),
 
     And,
     Class,
@@ -46,7 +48,28 @@ pub enum TokenType {
 }
 
 pub struct Token {
-    token_type: TokenType,
-    lexeme: String,
-    literal: 
+    pub token_type: TokenType,
+    pub lexeme: String,
+    pub line: u64,
+}
+
+impl Token {
+    pub fn new(token_type: TokenType, lexeme: String, line: u64) -> Token {
+        Token {
+            token_type,
+            lexeme,
+            line,
+        }
+    }
+}
+
+impl Display for Token {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self.token_type {
+            TokenType::Identifier(s) => write!(f, "{:?} {} {}", self.token_type, self.lexeme, s),
+            TokenType::String(s) => write!(f, "{:?} {} {}", self.token_type, self.lexeme, s),
+            TokenType::Number(n) => write!(f, "{:?} {} {}", self.token_type, self.lexeme, n),
+            _ => write!(f, "{:?} {}", self.token_type, self.lexeme),
+        }
+    }
 }
