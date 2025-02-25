@@ -4,7 +4,7 @@ mod token;
 use scanner::Scanner;
 
 pub fn run(byte: String) {
-    let scanner = Scanner::new(byte);
+    let mut scanner = Scanner::new(&byte);
 
     let tokens = scanner.scan_tokens();
 
