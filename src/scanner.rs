@@ -47,6 +47,38 @@ impl<'a> Scanner<'a> {
             b'+' => self.add_token(TokenType::Plus),
             b';' => self.add_token(TokenType::Semicolon),
             b'*' => self.add_token(TokenType::Star),
+            b'!' => {
+                let token = if self.match_next(b'=') {
+                    TokenType::BangEqual
+                } else {
+                    TokenType::Bang
+                };
+                self.add_token(token)
+            }
+            b'=' => {
+                let token = if self.match_next(b'=') {
+                    TokenType::EqualEqual
+                } else {
+                    TokenType::Equal
+                };
+                self.add_token(token)
+            }
+            b'<' => {
+                let token = if self.match_next(b'=') {
+                    TokenType::LessEqual
+                } else {
+                    TokenType::Less
+                };
+                self.add_token(token)
+            }
+            b'>' => {
+                let token = if self.match_next(b'=') {
+                    TokenType::GreaterEqual
+                } else {
+                    TokenType::Greater
+                };
+                self.add_token(token)
+            }
             _ => error(self.line, "Unexpected character".to_string()),
         }
     }
@@ -54,6 +86,19 @@ impl<'a> Scanner<'a> {
     fn advance(&mut self) -> u8 {
         self.current += 1;
         self.source[self.current - 1]
+    }
+
+    fn match_next(&mut self, expected: u8) -> bool {
+        if self.is_at_end() {
+            return false;
+        }
+
+        if self.source[self.current] != expected {
+            return false;
+        }
+
+        self.current += 1;
+        true
     }
 
     fn add_token(&mut self, token_type: TokenType) {
