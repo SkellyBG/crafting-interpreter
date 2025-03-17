@@ -2,7 +2,7 @@ use std::{
     env,
     error::Error,
     fs,
-    io::{self, BufRead, BufReader},
+    io::{self, BufRead, BufReader, Write},
     process,
 };
 
@@ -22,6 +22,7 @@ fn run_prompt() -> Result<(), Box<dyn Error + 'static>> {
 
     loop {
         print!("> ");
+        io::stdout().flush()?;
         let mut line = String::new();
 
         let size = buffered_reader.read_line(&mut line)?;
