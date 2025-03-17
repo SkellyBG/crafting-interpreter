@@ -11,8 +11,26 @@ pub struct Scanner<'a> {
     line: u64,
 }
 
-fn map_keywords(&self, string: &str) -> Option<TokenType> {
-    match string {}
+fn map_keywords(string: &str) -> Option<TokenType> {
+    match string {
+        "and" => Some(TokenType::And),
+        "class" => Some(TokenType::Class),
+        "else" => Some(TokenType::Else),
+        "false" => Some(TokenType::False),
+        "for" => Some(TokenType::For),
+        "fun" => Some(TokenType::Fun),
+        "if" => Some(TokenType::If),
+        "nil" => Some(TokenType::Nil),
+        "or" => Some(TokenType::Or),
+        "print" => Some(TokenType::Print),
+        "return" => Some(TokenType::Return),
+        "super" => Some(TokenType::Super),
+        "this" => Some(TokenType::This),
+        "true" => Some(TokenType::True),
+        "var" => Some(TokenType::Var),
+        "while" => Some(TokenType::While),
+        _ => None,
+    }
 }
 
 impl<'a> Scanner<'a> {
@@ -180,7 +198,10 @@ impl<'a> Scanner<'a> {
         }
 
         let text = String::from_utf8(self.source[self.start..self.current].to_vec()).unwrap();
-        self.add_token(TokenType::Identifier(text));
+        match map_keywords(&text) {
+            Some(token_type) => self.add_token(token_type),
+            None => self.add_token(TokenType::Identifier(text)),
+        }
     }
 
     fn add_token(&mut self, token_type: TokenType) {
