@@ -11,6 +11,10 @@ pub struct Scanner<'a> {
     line: u64,
 }
 
+fn map_keywords(&self, string: &str) -> Option<TokenType> {
+    match string {}
+}
+
 impl<'a> Scanner<'a> {
     pub fn new(source: &'a String) -> Self {
         Scanner {
@@ -79,6 +83,22 @@ impl<'a> Scanner<'a> {
                 };
                 self.add_token(token)
             }
+            b'/' => {
+                if self.match_next(b'/') {
+                    while self.peek() != b'\n' && !self.is_at_end() {
+                        self.advance();
+                    }
+                } else {
+                    self.add_token(TokenType::Slash);
+                }
+            }
+            b' ' => (),
+            b'\r' => (),
+            b'\t' => (),
+            b'\n' => self.line += 1,
+            b'"' => self.string(),
+            b'0'..=b'9' => self.number(),
+            b'a'..=b'z' | b'A'..=b'Z' | b'_' => self.identifier(),
             _ => error(self.line, "Unexpected character".to_string()),
         }
     }
@@ -99,6 +119,68 @@ impl<'a> Scanner<'a> {
 
         self.current += 1;
         true
+    }
+
+    fn peek(&self) -> u8 {
+        if self.is_at_end() {
+            return b'\0';
+        }
+        self.source[self.current]
+    }
+
+    fn peek_next(&self) -> u8 {
+        *self.source.get(self.current + 1).unwrap_or(&b'\0')
+    }
+
+    fn string(&mut self) {
+        while self.peek() != b'"' && !self.is_at_end() {
+            if self.peek() == b'\n' {
+                self.line += 1;
+            }
+            self.advance();
+        }
+
+        if self.is_at_end() {
+            error(self.line, "Unterminated string.".into());
+            return;
+        }
+
+        self.advance();
+
+        let value =
+            String::from_utf8(self.source[self.start + 1..self.current - 1].to_vec()).unwrap();
+
+        self.add_token(TokenType::String(value));
+    }
+
+    fn number(&mut self) {
+        while self.peek().is_ascii_digit() {
+            self.advance();
+        }
+
+        if self.peek() == b'.' && self.peek_next().is_ascii_digit() {
+            self.advance();
+
+            while self.peek().is_ascii_digit() {
+                self.advance();
+            }
+        }
+
+        self.add_token(TokenType::Number(
+            String::from_utf8(self.source[self.start..self.current].to_vec())
+                .unwrap()
+                .parse()
+                .unwrap(),
+        ));
+    }
+
+    fn identifier(&mut self) {
+        while self.peek().is_ascii_alphanumeric() {
+            self.advance();
+        }
+
+        let text = String::from_utf8(self.source[self.start..self.current].to_vec()).unwrap();
+        self.add_token(TokenType::Identifier(text));
     }
 
     fn add_token(&mut self, token_type: TokenType) {
