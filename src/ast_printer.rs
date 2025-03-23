@@ -1,0 +1,3 @@
+struct AstPrinter {}
+
+impl AstPrinter {}

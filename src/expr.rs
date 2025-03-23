@@ -1,5 +1,4 @@
-use crate::token::Token;
-
+enum Literal {}
 enum BinOp {
     EqualEqual,
     BangEqual,
@@ -32,5 +31,4 @@ enum Expr {
         operator: BinOp,
         right: Box<Expr>,
     },
-    Operator,
 }
