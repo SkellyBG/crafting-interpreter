@@ -1,3 +1,9 @@
+use crate::expr::Expr;
+
 struct AstPrinter {}
 
-impl AstPrinter {}
+impl AstPrinter {
+    fn print(expr: Expr) {
+        print!("{}", expr);
+    }
+}
