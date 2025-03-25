@@ -90,13 +90,13 @@ impl Display for Expr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Expr::Literal(literal) => write!(f, "{}", literal),
-            Expr::Grouping { expression } => todo!(),
-            Expr::Unary { operator, right } => todo!(),
+            Expr::Grouping { expression } => write!(f, "(group {})", expression),
+            Expr::Unary { operator, right } => write!(f, "({} {})", operator, right),
             Expr::Binary {
                 left,
                 operator,
                 right,
-            } => todo!(),
+            } => write!(f, "({} {} {})", operator, left, right),
         }
     }
 }
