@@ -1,11 +1,20 @@
+use std::{error::Error, fmt, mem::discriminant};
+
 use crate::{
-    expr::{BinOp, Expr},
-    token::{self, Token, TokenType},
+    error,
+    expr::{BinOp, Expr, Literal, UnOp},
+    token::{Token, TokenType},
 };
 
 struct Parser {
     tokens: Vec<Token>,
     current: usize,
+}
+
+#[derive(Debug)]
+struct ParserError {
+    token: Token,
+    message: String,
 }
 
 impl Parser {
@@ -65,21 +74,101 @@ impl Parser {
     }
 
     fn term(&mut self) -> Expr {
-        let left = self.factor();
+        let mut left = self.factor();
 
         while self.match_tokens(&[TokenType::Plus, TokenType::Minus]) {
-            let operator = self.previous()
-            
+            let operator = self.previous();
+            let right = self.factor();
+            left = Expr::Binary {
+                left: Box::new(left),
+                operator: match operator.token_type {
+                    TokenType::Plus => BinOp::Plus,
+                    TokenType::Minus => BinOp::Minus,
+                    _ => unreachable!(),
+                },
+                right: Box::new(right),
+            };
         }
 
         left
     }
 
-    fn factor(&mut self) -> Expr {}
+    fn factor(&mut self) -> Expr {
+        let mut left = self.unary();
 
-    fn unary(&mut self) -> Expr {}
+        while self.match_tokens(&[TokenType::Slash, TokenType::Star]) {
+            let operator = self.previous();
+            let right = self.unary();
+            left = Expr::Binary {
+                left: Box::new(left),
+                operator: match operator.token_type {
+                    TokenType::Slash => BinOp::Slash,
+                    TokenType::Star => BinOp::Star,
+                    _ => unreachable!(),
+                },
+                right: Box::new(right),
+            };
+        }
 
-    fn primary(&mut self) -> Expr {}
+        left
+    }
+
+    fn unary(&mut self) -> Expr {
+        if self.match_tokens(&[TokenType::Bang, TokenType::Minus]) {
+            let operator = self.previous();
+            let right = self.unary();
+            return Expr::Unary {
+                operator: match operator.token_type {
+                    TokenType::Bang => UnOp::Bang,
+                    TokenType::Minus => UnOp::Minus,
+                    _ => unreachable!(),
+                },
+                right: Box::new(right),
+            };
+        }
+
+        self.primary()
+    }
+
+    fn primary(&mut self) -> Expr {
+        if self.match_tokens(&[TokenType::False]) {
+            return Expr::Literal(Literal::False);
+        }
+
+        if self.match_tokens(&[TokenType::True]) {
+            return Expr::Literal(Literal::True);
+        }
+
+        if self.match_tokens(&[TokenType::Number(-1), TokenType::String("a".to_owned())]) {
+            let literal = match self.previous().token_type {
+                TokenType::Number(v) => Literal::Number(v),
+                TokenType::String(v) => Literal::String(v),
+                _ => unreachable!(),
+            };
+            return Expr::Literal(literal);
+        }
+
+        if self.match_tokens(&[TokenType::LeftParen]) {
+            let expr = self.expression();
+            self.consume(TokenType::RightParen, "Expect ')' after expression.");
+            return Expr::Grouping {
+                expression: Box::new(expr),
+            };
+        }
+
+        unreachable!()
+    }
+
+    fn consume(&mut self, token_type: TokenType, message: &str) -> Result<TokenType, ParserError> {
+        if self.check(&token_type) {
+            return Ok(self.advance().token_type);
+        }
+
+        Err(ParserError {
+            token: self.peek(),
+            message: message.to_owned(),
+        })
+    }
 
     fn match_tokens(&mut self, token_types: &[TokenType]) -> bool {
         for token_type in token_types {
@@ -92,11 +181,7 @@ impl Parser {
     }
 
     fn check(&self, token_type: &TokenType) -> bool {
-        if self.is_at_end() {
-            false
-        } else {
-            self.peek().token_type == *token_type
-        }
+        !self.is_at_end() && discriminant(&self.peek().token_type) == discriminant(token_type)
     }
 
     fn advance(&mut self) -> Token {
