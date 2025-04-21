@@ -12,7 +12,7 @@ impl Display for Literal {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let string = match self {
             Literal::Number(value) => &value.to_string(),
-            Literal::String(value) => value,
+            Literal::String(value) => &format!("\"{}\"", value),
             Literal::True => "true",
             Literal::False => "false",
             Literal::Nil => "nil",

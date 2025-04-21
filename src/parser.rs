@@ -1,37 +1,38 @@
-use std::{error::Error, fmt, mem::discriminant};
+use std::mem::discriminant;
 
 use crate::{
-    error,
     expr::{BinOp, Expr, Literal, UnOp},
     token::{Token, TokenType},
+    token_error,
 };
 
-struct Parser {
-    tokens: Vec<Token>,
-    current: usize,
+pub struct Parser {
+    pub tokens: Vec<Token>,
+    pub current: usize,
 }
 
 #[derive(Debug)]
-struct ParserError {
-    token: Token,
-    message: String,
-}
+struct ParserError;
 
 impl Parser {
-    fn new(tokens: Vec<Token>) -> Self {
+    pub fn new(tokens: Vec<Token>) -> Self {
         Self { tokens, current: 0 }
     }
 
-    fn expression(&mut self) -> Expr {
+    pub fn parse(&mut self) -> Option<Expr> {
+        self.expression().ok()
+    }
+
+    fn expression(&mut self) -> Result<Expr, ParserError> {
         self.equality()
     }
 
-    fn equality(&mut self) -> Expr {
-        let mut left = self.comparison();
+    fn equality(&mut self) -> Result<Expr, ParserError> {
+        let mut left = self.comparison()?;
 
         while self.match_tokens(&[TokenType::BangEqual, TokenType::EqualEqual]) {
             let operator = self.previous();
-            let right = self.comparison();
+            let right = self.comparison()?;
             left = Expr::Binary {
                 left: Box::new(left),
                 operator: match operator.token_type {
@@ -43,11 +44,11 @@ impl Parser {
             };
         }
 
-        left
+        Ok(left)
     }
 
-    fn comparison(&mut self) -> Expr {
-        let mut left = self.term();
+    fn comparison(&mut self) -> Result<Expr, ParserError> {
+        let mut left = self.term()?;
 
         while self.match_tokens(&[
             TokenType::Greater,
@@ -56,7 +57,7 @@ impl Parser {
             TokenType::LessEqual,
         ]) {
             let operator = self.previous();
-            let right = self.term();
+            let right = self.term()?;
             left = Expr::Binary {
                 left: Box::new(left),
                 operator: match operator.token_type {
@@ -70,15 +71,15 @@ impl Parser {
             };
         }
 
-        left
+        Ok(left)
     }
 
-    fn term(&mut self) -> Expr {
-        let mut left = self.factor();
+    fn term(&mut self) -> Result<Expr, ParserError> {
+        let mut left = self.factor()?;
 
         while self.match_tokens(&[TokenType::Plus, TokenType::Minus]) {
             let operator = self.previous();
-            let right = self.factor();
+            let right = self.factor()?;
             left = Expr::Binary {
                 left: Box::new(left),
                 operator: match operator.token_type {
@@ -90,15 +91,15 @@ impl Parser {
             };
         }
 
-        left
+        Ok(left)
     }
 
-    fn factor(&mut self) -> Expr {
-        let mut left = self.unary();
+    fn factor(&mut self) -> Result<Expr, ParserError> {
+        let mut left = self.unary()?;
 
         while self.match_tokens(&[TokenType::Slash, TokenType::Star]) {
             let operator = self.previous();
-            let right = self.unary();
+            let right = self.unary()?;
             left = Expr::Binary {
                 left: Box::new(left),
                 operator: match operator.token_type {
@@ -110,33 +111,33 @@ impl Parser {
             };
         }
 
-        left
+        Ok(left)
     }
 
-    fn unary(&mut self) -> Expr {
+    fn unary(&mut self) -> Result<Expr, ParserError> {
         if self.match_tokens(&[TokenType::Bang, TokenType::Minus]) {
             let operator = self.previous();
-            let right = self.unary();
-            return Expr::Unary {
+            let right = self.unary()?;
+            return Ok(Expr::Unary {
                 operator: match operator.token_type {
                     TokenType::Bang => UnOp::Bang,
                     TokenType::Minus => UnOp::Minus,
                     _ => unreachable!(),
                 },
                 right: Box::new(right),
-            };
+            });
         }
 
         self.primary()
     }
 
-    fn primary(&mut self) -> Expr {
+    fn primary(&mut self) -> Result<Expr, ParserError> {
         if self.match_tokens(&[TokenType::False]) {
-            return Expr::Literal(Literal::False);
+            return Ok(Expr::Literal(Literal::False));
         }
 
         if self.match_tokens(&[TokenType::True]) {
-            return Expr::Literal(Literal::True);
+            return Ok(Expr::Literal(Literal::True));
         }
 
         if self.match_tokens(&[TokenType::Number(-1), TokenType::String("a".to_owned())]) {
@@ -145,18 +146,19 @@ impl Parser {
                 TokenType::String(v) => Literal::String(v),
                 _ => unreachable!(),
             };
-            return Expr::Literal(literal);
+            return Ok(Expr::Literal(literal));
         }
 
         if self.match_tokens(&[TokenType::LeftParen]) {
-            let expr = self.expression();
-            self.consume(TokenType::RightParen, "Expect ')' after expression.");
-            return Expr::Grouping {
+            let expr = self.expression()?;
+            self.consume(TokenType::RightParen, "Expect ')' after expression.")?;
+            return Ok(Expr::Grouping {
                 expression: Box::new(expr),
-            };
+            });
         }
 
-        unreachable!()
+        token_error(self.peek(), "Expect expression.".to_owned());
+        Err(ParserError)
     }
 
     fn consume(&mut self, token_type: TokenType, message: &str) -> Result<TokenType, ParserError> {
@@ -164,10 +166,8 @@ impl Parser {
             return Ok(self.advance().token_type);
         }
 
-        Err(ParserError {
-            token: self.peek(),
-            message: message.to_owned(),
-        })
+        token_error(self.peek(), message.to_owned());
+        Err(ParserError)
     }
 
     fn match_tokens(&mut self, token_types: &[TokenType]) -> bool {
@@ -201,5 +201,29 @@ impl Parser {
 
     fn previous(&self) -> Token {
         self.tokens[self.current - 1].clone()
+    }
+
+    fn synchronize(&mut self) {
+        self.advance();
+
+        while !self.is_at_end() {
+            if self.previous().token_type == TokenType::Semicolon {
+                return;
+            }
+
+            match self.peek().token_type {
+                TokenType::Class
+                | TokenType::Fun
+                | TokenType::Var
+                | TokenType::For
+                | TokenType::If
+                | TokenType::While
+                | TokenType::Print
+                | TokenType::Return => return,
+                _ => (),
+            }
+
+            self.advance();
+        }
     }
 }
