@@ -140,6 +140,10 @@ impl Parser {
             return Ok(Expr::Literal(Literal::True));
         }
 
+        if self.match_tokens(&[TokenType::Nil]) {
+            return Ok(Expr::Literal(Literal::Nil));
+        }
+
         if self.match_tokens(&[TokenType::Number(-1), TokenType::String("a".to_owned())]) {
             let literal = match self.previous().token_type {
                 TokenType::Number(v) => Literal::Number(v),
