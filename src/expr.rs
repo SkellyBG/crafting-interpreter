@@ -1,5 +1,6 @@
 use std::fmt::Display;
 
+#[derive(Debug)]
 pub(super) enum Literal {
     Number(i64),
     String(String),
@@ -22,6 +23,7 @@ impl Display for Literal {
     }
 }
 
+#[derive(Debug)]
 pub(super) enum BinOp {
     EqualEqual,
     BangEqual,
@@ -54,6 +56,7 @@ impl Display for BinOp {
     }
 }
 
+#[derive(Debug)]
 pub(super) enum UnOp {
     Minus,
     Bang,
@@ -70,6 +73,7 @@ impl Display for UnOp {
     }
 }
 
+#[derive(Debug)]
 pub(super) enum Expr {
     Literal(Literal),
     Grouping {
