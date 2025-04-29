@@ -4,6 +4,7 @@ mod parser;
 mod scanner;
 mod token;
 
+use interpreter::Interpreter;
 use parser::Parser;
 use scanner::Scanner;
 use token::{Token, TokenType};
@@ -15,8 +16,11 @@ pub fn run(byte: String) {
 
     let mut parser = Parser::new(tokens.to_vec());
 
+    let interpreter = Interpreter::new();
+
     if let Some(expression) = parser.parse() {
         println!("{}", expression);
+        interpreter.interpret(expression);
     }
 }
 
