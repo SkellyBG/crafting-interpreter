@@ -161,7 +161,7 @@ impl Parser {
             });
         }
 
-        token_error(self.peek(), "Expect expression.".to_owned());
+        token_error(self.peek(), "Expect expression.");
         Err(ParserError)
     }
 
@@ -170,7 +170,7 @@ impl Parser {
             return Ok(self.advance().token_type);
         }
 
-        token_error(self.peek(), message.to_owned());
+        token_error(self.peek(), message);
         Err(ParserError)
     }
 

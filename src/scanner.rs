@@ -117,7 +117,7 @@ impl<'a> Scanner<'a> {
             b'"' => self.string(),
             b'0'..=b'9' => self.number(),
             b'a'..=b'z' | b'A'..=b'Z' | b'_' => self.identifier(),
-            _ => error(self.line, "Unexpected character".to_string()),
+            _ => error(self.line, "Unexpected character"),
         }
     }
 

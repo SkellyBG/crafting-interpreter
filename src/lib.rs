@@ -24,18 +24,20 @@ pub fn run(byte: String) {
     }
 }
 
-pub fn error(line: u64, message: String) {
-    report(line, "".to_string(), message);
+pub fn error(line: u64, message: &str) {
+    report(line, "", message);
 }
 
-pub fn report(line: u64, location: String, message: String) {
+pub fn report(line: u64, location: &str, message: &str) {
     eprintln!("[line {}] Error{}: {}", line, location, message)
 }
 
-pub fn token_error(token: Token, message: String) {
+pub fn token_error(token: Token, message: &str) {
     if token.token_type == TokenType::Eof {
-        report(token.line, " at end".to_owned(), message)
+        report(token.line, " at end", message)
     } else {
-        report(token.line, format!(" at '{}'", token.lexeme), message);
+        report(token.line, &format!(" at '{}'", token.lexeme), message);
     }
 }
+
+pub fn runtime_error() {}
