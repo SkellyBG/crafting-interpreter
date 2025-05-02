@@ -104,3 +104,10 @@ impl Display for Expr {
         }
     }
 }
+
+#[derive(Debug)]
+
+pub(super) enum Stmt {
+    ExprStmt(Expr),
+    PrintStmt(Expr),
+}

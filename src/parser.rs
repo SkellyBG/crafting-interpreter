@@ -1,7 +1,7 @@
 use std::mem::discriminant;
 
 use crate::{
-    expr::{BinOp, Expr, Literal, UnOp},
+    stmt::{BinOp, Expr, Literal, Stmt, UnOp},
     token::{Token, TokenType},
     Lox,
 };
@@ -19,8 +19,33 @@ impl Parser {
         Self { tokens, current: 0 }
     }
 
-    pub fn parse(&mut self) -> Option<Expr> {
-        self.expression().ok()
+    pub fn parse(&mut self) -> Vec<Stmt> {
+        let mut statements = Vec::new();
+        while !self.is_at_end() {
+            statements.push(self.statement().unwrap());
+        }
+
+        statements
+    }
+
+    fn statement(&mut self) -> Result<Stmt, ParserError> {
+        if self.match_tokens(&[TokenType::Print]) {
+            self.print_statement()
+        } else {
+            Ok(self.expression_statement()?)
+        }
+    }
+
+    fn print_statement(&mut self) -> Result<Stmt, ParserError> {
+        let value = self.expression()?;
+        self.consume(TokenType::Semicolon, "Expect ';' after value.")?;
+        Ok(Stmt::PrintStmt(value))
+    }
+
+    fn expression_statement(&mut self) -> Result<Stmt, ParserError> {
+        let value = self.expression()?;
+        self.consume(TokenType::Semicolon, "Expect ';' after expression.")?;
+        Ok(Stmt::ExprStmt(value))
     }
 
     fn expression(&mut self) -> Result<Expr, ParserError> {

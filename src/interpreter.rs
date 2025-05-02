@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 use crate::{
-    expr::{BinOp, Expr, Literal, UnOp},
+    stmt::{BinOp, Expr, Literal, UnOp},
     Lox,
 };
 
