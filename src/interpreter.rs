@@ -74,18 +74,24 @@ impl Interpreter {
                 let right_value = self.evaluate(*right)?;
 
                 match (&left_value, &right_value) {
-                    (Value::Number(l_v), Value::Number(r_v)) => match operator {
-                        BinOp::EqualEqual => Ok(Value::Boolean(l_v == r_v)),
-                        BinOp::BangEqual => Ok(Value::Boolean(l_v != r_v)),
-                        BinOp::Less => Ok(Value::Boolean(l_v < r_v)),
-                        BinOp::LessEqual => Ok(Value::Boolean(l_v <= r_v)),
-                        BinOp::Greater => Ok(Value::Boolean(l_v > r_v)),
-                        BinOp::GreaterEqual => Ok(Value::Boolean(l_v >= r_v)),
-                        BinOp::Plus => Ok(Value::Number(l_v + r_v)),
-                        BinOp::Minus => Ok(Value::Number(l_v - r_v)),
-                        BinOp::Star => Ok(Value::Number(l_v * r_v)),
-                        BinOp::Slash => Ok(Value::Number(l_v / r_v)),
-                    },
+                    (Value::Number(l_v), Value::Number(r_v)) => {
+                        match operator {
+                            BinOp::EqualEqual => Ok(Value::Boolean(l_v == r_v)),
+                            BinOp::BangEqual => Ok(Value::Boolean(l_v != r_v)),
+                            BinOp::Less => Ok(Value::Boolean(l_v < r_v)),
+                            BinOp::LessEqual => Ok(Value::Boolean(l_v <= r_v)),
+                            BinOp::Greater => Ok(Value::Boolean(l_v > r_v)),
+                            BinOp::GreaterEqual => Ok(Value::Boolean(l_v >= r_v)),
+                            BinOp::Plus => Ok(Value::Number(l_v + r_v)),
+                            BinOp::Minus => Ok(Value::Number(l_v - r_v)),
+                            BinOp::Star => Ok(Value::Number(l_v * r_v)),
+                            BinOp::Slash => l_v.checked_div(*r_v).map(|v| Value::Number(v)).ok_or(
+                                RuntimeError {
+                                    message: "Division by 0 encountered".to_owned(),
+                                },
+                            ),
+                        }
+                    }
                     (Value::String(l_v), Value::String(r_v)) => match operator {
                         BinOp::EqualEqual => Ok(Value::Boolean(l_v == r_v)),
                         BinOp::BangEqual => Ok(Value::Boolean(l_v != r_v)),
