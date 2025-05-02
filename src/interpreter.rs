@@ -1,6 +1,9 @@
 use std::fmt::Display;
 
-use crate::expr::{BinOp, Expr, Literal, UnOp};
+use crate::{
+    expr::{BinOp, Expr, Literal, UnOp},
+    Lox,
+};
 
 #[derive(Debug, PartialEq, Eq)]
 enum Value {
@@ -34,9 +37,9 @@ impl Interpreter {
     }
 
     pub fn interpret(&self, expression: Expr) {
-        if let Ok(v) = self.evaluate(expression) {
-            println!("{}", v);
-        } else {
+        match self.evaluate(expression) {
+            Ok(v) => println!("{}", v),
+            Err(e) => Lox::runtime_error(&e.message),
         }
     }
 

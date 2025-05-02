@@ -48,5 +48,7 @@ impl Lox {
         }
     }
 
-    pub fn runtime_error() {}
+    pub fn runtime_error(message: &str) {
+        eprintln!("Runtime error: {}", message);
+    }
 }
