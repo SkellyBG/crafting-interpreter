@@ -3,7 +3,7 @@ use std::mem::discriminant;
 use crate::{
     expr::{BinOp, Expr, Literal, UnOp},
     token::{Token, TokenType},
-    token_error,
+    Lox,
 };
 
 pub struct Parser {
@@ -161,7 +161,7 @@ impl Parser {
             });
         }
 
-        token_error(self.peek(), "Expect expression.");
+        Lox::token_error(self.peek(), "Expect expression.");
         Err(ParserError)
     }
 
@@ -170,7 +170,7 @@ impl Parser {
             return Ok(self.advance().token_type);
         }
 
-        token_error(self.peek(), message);
+        Lox::token_error(self.peek(), message);
         Err(ParserError)
     }
 

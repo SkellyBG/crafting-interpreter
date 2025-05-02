@@ -6,12 +6,12 @@ use std::{
     process,
 };
 
-use crafting_interpreter::run;
+use crafting_interpreter::Lox;
 
 fn run_file(path: &str) -> Result<(), Box<dyn Error + 'static>> {
     let data: Vec<u8> = fs::read(path)?;
 
-    run(String::from_utf8(data)?);
+    Lox::new().run(&String::from_utf8(data)?);
 
     Ok(())
 }
@@ -19,6 +19,8 @@ fn run_file(path: &str) -> Result<(), Box<dyn Error + 'static>> {
 fn run_prompt() -> Result<(), Box<dyn Error + 'static>> {
     let stdin = io::stdin();
     let mut buffered_reader = BufReader::new(stdin);
+
+    let mut lox = Lox::new();
 
     loop {
         print!("> ");
@@ -31,7 +33,7 @@ fn run_prompt() -> Result<(), Box<dyn Error + 'static>> {
             break Ok(());
         }
 
-        run(line);
+        lox.run(&line);
     }
 }
 

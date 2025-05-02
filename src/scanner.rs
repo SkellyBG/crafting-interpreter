@@ -1,6 +1,6 @@
 use crate::{
-    error,
     token::{Token, TokenType},
+    Lox,
 };
 
 pub struct Scanner<'a> {
@@ -34,7 +34,7 @@ fn map_keywords(string: &str) -> Option<TokenType> {
 }
 
 impl<'a> Scanner<'a> {
-    pub fn new(source: &'a String) -> Self {
+    pub fn new(source: &'a str) -> Self {
         Scanner {
             source: source.as_bytes(),
             tokens: Vec::new(),
@@ -117,7 +117,7 @@ impl<'a> Scanner<'a> {
             b'"' => self.string(),
             b'0'..=b'9' => self.number(),
             b'a'..=b'z' | b'A'..=b'Z' | b'_' => self.identifier(),
-            _ => error(self.line, "Unexpected character"),
+            _ => Lox::error(self.line, "Unexpected character"),
         }
     }
 
@@ -159,7 +159,7 @@ impl<'a> Scanner<'a> {
         }
 
         if self.is_at_end() {
-            error(self.line, "Unterminated string.".into());
+            Lox::error(self.line, "Unterminated string.".into());
             return;
         }
 
