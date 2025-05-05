@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 use crate::{
-    stmt::{BinOp, Expr, Literal, UnOp},
+    stmt::{BinOp, Expr, Literal, Stmt, UnOp},
     Lox,
 };
 
@@ -36,11 +36,25 @@ impl Interpreter {
         Self {}
     }
 
-    pub fn interpret(&self, expression: Expr) {
-        match self.evaluate(expression) {
-            Ok(v) => println!("{}", v),
-            Err(e) => Lox::runtime_error(&e.message),
-        }
+    pub fn interpret(&self, statements: Vec<Stmt>) {
+        statements.into_iter().for_each(|s| {
+            if let Err(err) = self.execute(s) {
+                Lox::runtime_error(&err.message);
+            }
+        });
+    }
+
+    fn execute(&self, statement: Stmt) -> Result<(), RuntimeError> {
+        match statement {
+            Stmt::ExprStmt(expr) => {
+                self.evaluate(expr)?;
+            }
+            Stmt::PrintStmt(expr) => {
+                println!("{}", self.evaluate(expr)?);
+            }
+        };
+
+        Ok(())
     }
 
     fn evaluate(&self, expression: Expr) -> Result<Value, RuntimeError> {
@@ -74,24 +88,24 @@ impl Interpreter {
                 let right_value = self.evaluate(*right)?;
 
                 match (&left_value, &right_value) {
-                    (Value::Number(l_v), Value::Number(r_v)) => {
-                        match operator {
-                            BinOp::EqualEqual => Ok(Value::Boolean(l_v == r_v)),
-                            BinOp::BangEqual => Ok(Value::Boolean(l_v != r_v)),
-                            BinOp::Less => Ok(Value::Boolean(l_v < r_v)),
-                            BinOp::LessEqual => Ok(Value::Boolean(l_v <= r_v)),
-                            BinOp::Greater => Ok(Value::Boolean(l_v > r_v)),
-                            BinOp::GreaterEqual => Ok(Value::Boolean(l_v >= r_v)),
-                            BinOp::Plus => Ok(Value::Number(l_v + r_v)),
-                            BinOp::Minus => Ok(Value::Number(l_v - r_v)),
-                            BinOp::Star => Ok(Value::Number(l_v * r_v)),
-                            BinOp::Slash => l_v.checked_div(*r_v).map(|v| Value::Number(v)).ok_or(
-                                RuntimeError {
+                    (Value::Number(l_v), Value::Number(r_v)) => match operator {
+                        BinOp::EqualEqual => Ok(Value::Boolean(l_v == r_v)),
+                        BinOp::BangEqual => Ok(Value::Boolean(l_v != r_v)),
+                        BinOp::Less => Ok(Value::Boolean(l_v < r_v)),
+                        BinOp::LessEqual => Ok(Value::Boolean(l_v <= r_v)),
+                        BinOp::Greater => Ok(Value::Boolean(l_v > r_v)),
+                        BinOp::GreaterEqual => Ok(Value::Boolean(l_v >= r_v)),
+                        BinOp::Plus => Ok(Value::Number(l_v + r_v)),
+                        BinOp::Minus => Ok(Value::Number(l_v - r_v)),
+                        BinOp::Star => Ok(Value::Number(l_v * r_v)),
+                        BinOp::Slash => {
+                            l_v.checked_div(*r_v)
+                                .map(Value::Number)
+                                .ok_or(RuntimeError {
                                     message: "Division by 0 encountered".to_owned(),
-                                },
-                            ),
+                                })
                         }
-                    }
+                    },
                     (Value::String(l_v), Value::String(r_v)) => match operator {
                         BinOp::EqualEqual => Ok(Value::Boolean(l_v == r_v)),
                         BinOp::BangEqual => Ok(Value::Boolean(l_v != r_v)),

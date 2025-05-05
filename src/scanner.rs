@@ -159,7 +159,7 @@ impl<'a> Scanner<'a> {
         }
 
         if self.is_at_end() {
-            Lox::error(self.line, "Unterminated string.".into());
+            Lox::error(self.line, "Unterminated string.");
             return;
         }
 

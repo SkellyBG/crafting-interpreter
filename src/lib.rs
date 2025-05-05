@@ -26,10 +26,9 @@ impl Lox {
 
         let mut parser = Parser::new(tokens.to_vec());
 
-        if let Some(expression) = parser.parse() {
-            println!("{}", expression);
-            self.interpreter.interpret(expression);
-        }
+        let statements = parser.parse();
+
+        self.interpreter.interpret(statements);
     }
 
     pub fn error(line: u64, message: &str) {
