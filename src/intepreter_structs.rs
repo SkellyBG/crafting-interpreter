@@ -1,5 +1,7 @@
 use std::fmt::Display;
 
+use crate::token::Token;
+
 #[derive(Debug)]
 pub(super) enum Literal {
     Number(i64),
@@ -88,6 +90,9 @@ pub(super) enum Expr {
         operator: BinOp,
         right: Box<Expr>,
     },
+    Variable {
+        token: Token,
+    },
 }
 
 impl Display for Expr {
@@ -101,6 +106,7 @@ impl Display for Expr {
                 operator,
                 right,
             } => write!(f, "({} {} {})", operator, left, right),
+            Expr::Variable { token } => write!(f, "{}", token),
         }
     }
 }
@@ -110,4 +116,14 @@ impl Display for Expr {
 pub(super) enum Stmt {
     ExprStmt(Expr),
     PrintStmt(Expr),
+}
+
+#[derive(Debug)]
+
+pub(super) enum Decl {
+    VarDecl {
+        identifier: Token,
+        initializer: Option<Expr>,
+    },
+    Stmt(Stmt),
 }

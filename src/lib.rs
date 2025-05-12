@@ -1,7 +1,7 @@
+mod intepreter_structs;
 mod interpreter;
 mod parser;
 mod scanner;
-mod stmt;
 mod token;
 
 use interpreter::Interpreter;

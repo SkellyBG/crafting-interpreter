@@ -1,7 +1,7 @@
 use std::mem::discriminant;
 
 use crate::{
-    stmt::{BinOp, Expr, Literal, Stmt, UnOp},
+    intepreter_structs::{BinOp, Decl, Expr, Literal, Stmt, UnOp},
     token::{Token, TokenType},
     Lox,
 };
@@ -19,13 +19,46 @@ impl Parser {
         Self { tokens, current: 0 }
     }
 
-    pub fn parse(&mut self) -> Vec<Stmt> {
+    pub fn parse(&mut self) -> Vec<Decl> {
         let mut statements = Vec::new();
         while !self.is_at_end() {
-            statements.push(self.statement().unwrap());
+            statements.push(self.declaration().unwrap());
         }
 
         statements
+    }
+
+    fn declaration(&mut self) -> Option<Decl> {
+        let res = if self.match_tokens(&[TokenType::Var]) {
+            self.var_declaration()
+        } else {
+            self.statement().map(Decl::Stmt)
+        };
+
+        if res.is_err() {
+            self.synchronize();
+        }
+        res.ok()
+    }
+
+    fn var_declaration(&mut self) -> Result<Decl, ParserError> {
+        let token = self.consume(TokenType::Var, "Expect variable name.")?;
+
+        let initializer = if self.match_tokens(&[TokenType::Equal]) {
+            Some(self.expression()?)
+        } else {
+            None
+        };
+
+        self.consume(
+            TokenType::Semicolon,
+            "Expect ';' after variable declaration.",
+        )?;
+
+        Ok(Decl::VarDecl {
+            identifier: token,
+            initializer,
+        })
     }
 
     fn statement(&mut self) -> Result<Stmt, ParserError> {
@@ -186,13 +219,19 @@ impl Parser {
             });
         }
 
+        if self.match_tokens(&[TokenType::Identifier("a".into())]) {
+            return Ok(Expr::Variable {
+                token: self.previous(),
+            });
+        }
+
         Lox::token_error(self.peek(), "Expect expression.");
         Err(ParserError)
     }
 
-    fn consume(&mut self, token_type: TokenType, message: &str) -> Result<TokenType, ParserError> {
+    fn consume(&mut self, token_type: TokenType, message: &str) -> Result<Token, ParserError> {
         if self.check(&token_type) {
-            return Ok(self.advance().token_type);
+            return Ok(self.advance());
         }
 
         Lox::token_error(self.peek(), message);
