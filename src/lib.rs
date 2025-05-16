@@ -1,3 +1,4 @@
+mod environment;
 mod intepreter_structs;
 mod interpreter;
 mod parser;

@@ -1,12 +1,13 @@
 use std::fmt::Display;
 
 use crate::{
+    environment::Environment,
     intepreter_structs::{BinOp, Expr, Literal, Stmt, UnOp},
     Lox,
 };
 
-#[derive(Debug, PartialEq, Eq)]
-enum Value {
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub enum Value {
     String(String),
     Number(i64),
     Boolean(bool),
@@ -26,14 +27,18 @@ impl Display for Value {
 }
 
 #[derive(Debug)]
-struct RuntimeError {
-    message: String,
+pub struct RuntimeError {
+    pub message: String,
 }
-pub struct Interpreter {}
+pub struct Interpreter {
+    environment: Environment,
+}
 
 impl Interpreter {
     pub fn new() -> Self {
-        Self {}
+        Self {
+            environment: Environment::new(),
+        }
     }
 
     pub fn interpret(&self, statements: Vec<Stmt>) {
