@@ -42,7 +42,10 @@ impl Parser {
     }
 
     fn var_declaration(&mut self) -> Result<Decl, ParserError> {
-        let token = self.consume(TokenType::Var, "Expect variable name.")?;
+        let token = self.consume(
+            TokenType::Identifier("a".to_owned()),
+            "Expect variable name.",
+        )?;
 
         let initializer = if self.match_tokens(&[TokenType::Equal]) {
             Some(self.expression()?)

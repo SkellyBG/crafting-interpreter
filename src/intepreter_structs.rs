@@ -13,15 +13,13 @@ pub(super) enum Literal {
 
 impl Display for Literal {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let string = match self {
-            Literal::Number(value) => &value.to_string(),
-            Literal::String(value) => &format!("\"{}\"", value),
-            Literal::True => "true",
-            Literal::False => "false",
-            Literal::Nil => "nil",
-        };
-
-        write!(f, "{}", string)
+        match self {
+            Literal::Number(value) => write!(f, "{value}"),
+            Literal::String(value) => write!(f, "\"{value}\""),
+            Literal::True => write!(f, "true"),
+            Literal::False => write!(f, "false"),
+            Literal::Nil => write!(f, "nil"),
+        }
     }
 }
 

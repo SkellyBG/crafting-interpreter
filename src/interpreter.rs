@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use crate::{
     environment::Environment,
-    intepreter_structs::{BinOp, Expr, Literal, Stmt, UnOp},
+    intepreter_structs::{BinOp, Decl, Expr, Literal, Stmt, UnOp},
     Lox,
 };
 
@@ -16,13 +16,12 @@ pub enum Value {
 
 impl Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let string = match &self {
-            Value::String(v) => v,
-            Value::Number(v) => &v.to_string(),
-            Value::Boolean(v) => &v.to_string(),
-            Value::Nil => "nil",
-        };
-        write!(f, "{}", string)
+        match &self {
+            Value::String(v) => write!(f, "{v}"),
+            Value::Number(v) => write!(f, "{v}"),
+            Value::Boolean(v) => write!(f, "{v}"),
+            Value::Nil => write!(f, "nil"),
+        }
     }
 }
 
@@ -41,7 +40,7 @@ impl Interpreter {
         }
     }
 
-    pub fn interpret(&self, statements: Vec<Stmt>) {
+    pub fn interpret(&mut self, statements: Vec<Decl>) {
         statements.into_iter().for_each(|s| {
             if let Err(err) = self.execute(s) {
                 Lox::runtime_error(&err.message);
@@ -49,13 +48,21 @@ impl Interpreter {
         });
     }
 
-    fn execute(&self, statement: Stmt) -> Result<(), RuntimeError> {
+    fn execute(&mut self, statement: Decl) -> Result<(), RuntimeError> {
         match statement {
-            Stmt::ExprStmt(expr) => {
+            Decl::Stmt(Stmt::ExprStmt(expr)) => {
                 self.evaluate(expr)?;
             }
-            Stmt::PrintStmt(expr) => {
+            Decl::Stmt(Stmt::PrintStmt(expr)) => {
                 println!("{}", self.evaluate(expr)?);
+            }
+            Decl::VarDecl {
+                identifier,
+                initializer,
+            } => {
+                let value = initializer.map(|expr| self.evaluate(expr)).transpose()?;
+
+                self.environment.define(&identifier.lexeme, value);
             }
         };
 
@@ -128,6 +135,7 @@ impl Interpreter {
                     },
                 }
             }
+            Expr::Variable { token } => self.environment.get(token),
         }
     }
 
