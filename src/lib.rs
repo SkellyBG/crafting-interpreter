@@ -52,3 +52,9 @@ impl Lox {
         eprintln!("Runtime error: {}", message);
     }
 }
+
+impl Default for Lox {
+    fn default() -> Self {
+        Self::new()
+    }
+}

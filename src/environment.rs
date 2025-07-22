@@ -24,7 +24,7 @@ impl Environment {
     pub fn get(&self, token: Token) -> Result<Value, RuntimeError> {
         self.values
             .get(&token.lexeme)
-            .map(|v| v.clone())
+            .cloned()
             .ok_or_else(|| RuntimeError {
                 message: format!("Undefined variable {}.", token.lexeme),
             })
