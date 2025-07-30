@@ -91,6 +91,10 @@ pub(super) enum Expr {
     Variable {
         token: Token,
     },
+    Assign {
+        token: Token,
+        value: Box<Expr>,
+    },
 }
 
 impl Display for Expr {
@@ -105,6 +109,7 @@ impl Display for Expr {
                 right,
             } => write!(f, "({} {} {})", operator, left, right),
             Expr::Variable { token } => write!(f, "{}", token),
+            Expr::Assign { token, value } => write!(f, "({} {})", token, value),
         }
     }
 }

@@ -69,7 +69,7 @@ impl Interpreter {
         Ok(())
     }
 
-    fn evaluate(&self, expression: Expr) -> Result<Value, RuntimeError> {
+    fn evaluate(&mut self, expression: Expr) -> Result<Value, RuntimeError> {
         match expression {
             Expr::Literal(literal) => match literal {
                 Literal::Number(v) => Ok(Value::Number(v)),
@@ -136,6 +136,11 @@ impl Interpreter {
                 }
             }
             Expr::Variable { token } => self.environment.get(token),
+            Expr::Assign { token, value } => {
+                let value = self.evaluate(*value)?;
+                self.environment.assign(&token.lexeme, value.clone())?;
+                Ok(value)
+            }
         }
     }
 
