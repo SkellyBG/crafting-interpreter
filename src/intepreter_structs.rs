@@ -119,6 +119,7 @@ impl Display for Expr {
 pub(super) enum Stmt {
     ExprStmt(Expr),
     PrintStmt(Expr),
+    Block(Vec<Decl>),
 }
 
 #[derive(Debug)]

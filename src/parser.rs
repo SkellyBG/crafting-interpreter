@@ -1,9 +1,9 @@
 use std::mem::discriminant;
 
 use crate::{
+    Lox,
     intepreter_structs::{BinOp, Decl, Expr, Literal, Stmt, UnOp},
     token::{Token, TokenType},
-    Lox,
 };
 
 pub struct Parser {
@@ -67,6 +67,8 @@ impl Parser {
     fn statement(&mut self) -> Result<Stmt, ParserError> {
         if self.match_tokens(&[TokenType::Print]) {
             self.print_statement()
+        } else if self.match_tokens(&[TokenType::LeftBrace]) {
+            self.block_statement()
         } else {
             Ok(self.expression_statement()?)
         }
@@ -82,6 +84,19 @@ impl Parser {
         let value = self.expression()?;
         self.consume(TokenType::Semicolon, "Expect ';' after expression.")?;
         Ok(Stmt::ExprStmt(value))
+    }
+
+    fn block_statement(&mut self) -> Result<Stmt, ParserError> {
+        let mut statements = Vec::new();
+        while !self.check(&TokenType::RightBrace)
+            && !self.is_at_end()
+            && let Some(decl) = self.declaration()
+        {
+            statements.push(decl);
+        }
+
+        self.consume(TokenType::RightBrace, "Expect '}' after block.")?;
+        Ok(Stmt::Block(statements))
     }
 
     fn expression(&mut self) -> Result<Expr, ParserError> {
