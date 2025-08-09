@@ -1,9 +1,12 @@
-use std::fmt::Display;
+use std::{
+    fmt::Display,
+    mem::{replace, take},
+};
 
 use crate::{
+    Lox,
     environment::Environment,
     intepreter_structs::{BinOp, Decl, Expr, Literal, Stmt, UnOp},
-    Lox,
 };
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -63,6 +66,17 @@ impl Interpreter {
                 let value = initializer.map(|expr| self.evaluate(expr)).transpose()?;
 
                 self.environment.define(&identifier.lexeme, value);
+            }
+            Decl::Stmt(Stmt::Block(decls)) => {
+                let prev = replace(&mut self.environment, Environment::new());
+                self.environment.enclosing = Some(Box::new(prev));
+
+                let result = decls.into_iter().try_for_each(|decl| self.execute(decl));
+
+                let prev = take(&mut self.environment.enclosing);
+                self.environment = *prev.expect("Previous environment should always exist!");
+
+                result?;
             }
         };
 
