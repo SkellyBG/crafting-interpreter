@@ -53,10 +53,10 @@ impl Interpreter {
 
     fn execute(&mut self, statement: Decl) -> Result<(), RuntimeError> {
         match statement {
-            Decl::Stmt(Stmt::ExprStmt(expr)) => {
+            Decl::Stmt(Stmt::Expr(expr)) => {
                 self.evaluate(expr)?;
             }
-            Decl::Stmt(Stmt::PrintStmt(expr)) => {
+            Decl::Stmt(Stmt::Print(expr)) => {
                 println!("{}", self.evaluate(expr)?);
             }
             Decl::VarDecl {

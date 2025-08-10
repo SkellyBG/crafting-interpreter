@@ -37,7 +37,7 @@ impl Lox {
     }
 
     pub fn report(line: u64, location: &str, message: &str) {
-        eprintln!("[line {}] Error{}: {}", line, location, message)
+        eprintln!("[line {line}] Error{location}: {message}")
     }
 
     pub fn token_error(token: Token, message: &str) {
@@ -49,7 +49,7 @@ impl Lox {
     }
 
     pub fn runtime_error(message: &str) {
-        eprintln!("Runtime error: {}", message);
+        eprintln!("Runtime error: {message}");
     }
 }
 

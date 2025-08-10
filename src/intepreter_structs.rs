@@ -52,7 +52,7 @@ impl Display for BinOp {
             BinOp::Slash => "/",
         };
 
-        write!(f, "{}", string)
+        write!(f, "{string}")
     }
 }
 
@@ -69,7 +69,7 @@ impl Display for UnOp {
             UnOp::Bang => "!",
         };
 
-        write!(f, "{}", string)
+        write!(f, "{string}")
     }
 }
 
@@ -100,16 +100,16 @@ pub(super) enum Expr {
 impl Display for Expr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Expr::Literal(literal) => write!(f, "{}", literal),
-            Expr::Grouping { expression } => write!(f, "(group {})", expression),
-            Expr::Unary { operator, right } => write!(f, "({} {})", operator, right),
+            Expr::Literal(literal) => write!(f, "{literal}"),
+            Expr::Grouping { expression } => write!(f, "(group {expression})"),
+            Expr::Unary { operator, right } => write!(f, "({operator} {right})"),
             Expr::Binary {
                 left,
                 operator,
                 right,
-            } => write!(f, "({} {} {})", operator, left, right),
-            Expr::Variable { token } => write!(f, "{}", token),
-            Expr::Assign { token, value } => write!(f, "({} {})", token, value),
+            } => write!(f, "({operator} {left} {right})"),
+            Expr::Variable { token } => write!(f, "{token}"),
+            Expr::Assign { token, value } => write!(f, "({token} {value})"),
         }
     }
 }
@@ -117,8 +117,8 @@ impl Display for Expr {
 #[derive(Debug)]
 
 pub(super) enum Stmt {
-    ExprStmt(Expr),
-    PrintStmt(Expr),
+    Expr(Expr),
+    Print(Expr),
     Block(Vec<Decl>),
 }
 

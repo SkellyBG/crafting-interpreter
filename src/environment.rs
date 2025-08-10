@@ -19,13 +19,6 @@ impl Environment {
         }
     }
 
-    pub fn with_enclosing(environment: Environment) -> Self {
-        Self {
-            enclosing: Some(Box::new(environment)),
-            values: HashMap::new(),
-        }
-    }
-
     pub fn define(&mut self, name: &str, value: Option<Value>) {
         self.values
             .insert(name.to_owned(), value.unwrap_or(Value::Nil));

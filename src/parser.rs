@@ -77,13 +77,13 @@ impl Parser {
     fn print_statement(&mut self) -> Result<Stmt, ParserError> {
         let value = self.expression()?;
         self.consume(TokenType::Semicolon, "Expect ';' after value.")?;
-        Ok(Stmt::PrintStmt(value))
+        Ok(Stmt::Print(value))
     }
 
     fn expression_statement(&mut self) -> Result<Stmt, ParserError> {
         let value = self.expression()?;
         self.consume(TokenType::Semicolon, "Expect ';' after expression.")?;
-        Ok(Stmt::ExprStmt(value))
+        Ok(Stmt::Expr(value))
     }
 
     fn block_statement(&mut self) -> Result<Stmt, ParserError> {
