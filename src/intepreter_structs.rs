@@ -95,6 +95,11 @@ pub(super) enum Expr {
         token: Token,
         value: Box<Expr>,
     },
+    Logical {
+        left: Box<Expr>,
+        operator: Token,
+        right: Box<Expr>,
+    },
 }
 
 impl Display for Expr {
@@ -110,6 +115,11 @@ impl Display for Expr {
             } => write!(f, "({operator} {left} {right})"),
             Expr::Variable { token } => write!(f, "{token}"),
             Expr::Assign { token, value } => write!(f, "({token} {value})"),
+            Expr::Logical {
+                left,
+                operator,
+                right,
+            } => write!(f, "({left} {operator} {right})"),
         }
     }
 }
@@ -120,6 +130,11 @@ pub(super) enum Stmt {
     Expr(Expr),
     Print(Expr),
     Block(Vec<Decl>),
+    If {
+        condition: Expr,
+        then_branch: Box<Stmt>,
+        else_branch: Option<Box<Stmt>>,
+    },
 }
 
 #[derive(Debug)]

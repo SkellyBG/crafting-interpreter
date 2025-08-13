@@ -69,6 +69,8 @@ impl Parser {
             self.print_statement()
         } else if self.match_tokens(&[TokenType::LeftBrace]) {
             self.block_statement()
+        } else if self.match_tokens(&[TokenType::If]) {
+            self.if_statement()
         } else {
             Ok(self.expression_statement()?)
         }
@@ -78,12 +80,6 @@ impl Parser {
         let value = self.expression()?;
         self.consume(TokenType::Semicolon, "Expect ';' after value.")?;
         Ok(Stmt::Print(value))
-    }
-
-    fn expression_statement(&mut self) -> Result<Stmt, ParserError> {
-        let value = self.expression()?;
-        self.consume(TokenType::Semicolon, "Expect ';' after expression.")?;
-        Ok(Stmt::Expr(value))
     }
 
     fn block_statement(&mut self) -> Result<Stmt, ParserError> {
@@ -99,12 +95,38 @@ impl Parser {
         Ok(Stmt::Block(statements))
     }
 
+    fn if_statement(&mut self) -> Result<Stmt, ParserError> {
+        self.consume(TokenType::LeftParen, "Expect '(' after 'if'.")?;
+        let condition = self.expression()?;
+        self.consume(TokenType::RightParen, "Expect ')' after if condition.")?;
+        let then_branch = self.statement()?;
+        if self.match_tokens(&[TokenType::Else]) {
+            Ok(Stmt::If {
+                condition,
+                then_branch: Box::new(then_branch),
+                else_branch: Some(Box::new(self.statement()?)),
+            })
+        } else {
+            Ok(Stmt::If {
+                condition,
+                then_branch: Box::new(then_branch),
+                else_branch: None,
+            })
+        }
+    }
+
+    fn expression_statement(&mut self) -> Result<Stmt, ParserError> {
+        let value = self.expression()?;
+        self.consume(TokenType::Semicolon, "Expect ';' after expression.")?;
+        Ok(Stmt::Expr(value))
+    }
+
     fn expression(&mut self) -> Result<Expr, ParserError> {
         self.assignment()
     }
 
     fn assignment(&mut self) -> Result<Expr, ParserError> {
-        let expr = self.equality()?;
+        let expr = self.or()?;
         if self.match_tokens(&[TokenType::Equal]) {
             let equals = self.previous();
             let value = self.assignment()?;
@@ -116,6 +138,38 @@ impl Parser {
             }
             Lox::token_error(equals, "Invalid assignment target.");
             return Err(ParserError);
+        }
+
+        Ok(expr)
+    }
+
+    fn or(&mut self) -> Result<Expr, ParserError> {
+        let mut expr = self.and()?;
+        while self.match_tokens(&[TokenType::Or]) {
+            let operator = self.previous();
+            let right = self.and()?;
+
+            expr = Expr::Logical {
+                left: Box::new(expr),
+                operator,
+                right: Box::new(right),
+            };
+        }
+
+        Ok(expr)
+    }
+
+    fn and(&mut self) -> Result<Expr, ParserError> {
+        let mut expr = self.equality()?;
+        while self.match_tokens(&[TokenType::And]) {
+            let operator = self.previous();
+            let right = self.equality()?;
+
+            expr = Expr::Logical {
+                left: Box::new(expr),
+                operator,
+                right: Box::new(right),
+            };
         }
 
         Ok(expr)

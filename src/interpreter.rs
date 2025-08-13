@@ -7,6 +7,7 @@ use crate::{
     Lox,
     environment::Environment,
     intepreter_structs::{BinOp, Decl, Expr, Literal, Stmt, UnOp},
+    token::TokenType,
 };
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -77,6 +78,18 @@ impl Interpreter {
                 self.environment = *prev.expect("Previous environment should always exist!");
 
                 result?;
+            }
+            Decl::Stmt(Stmt::If {
+                condition,
+                then_branch,
+                else_branch,
+            }) => {
+                let condition_truthiness = self.evaluate(condition)?;
+                if self.is_truthy(&condition_truthiness) {
+                    self.execute(Decl::Stmt(*then_branch))?; // TODO: refactor and remove this Stmt wrapping
+                } else if let Some(stmt) = else_branch {
+                    self.execute(Decl::Stmt(*stmt))?;
+                }
             }
         };
 
@@ -154,6 +167,28 @@ impl Interpreter {
                 let value = self.evaluate(*value)?;
                 self.environment.assign(&token.lexeme, value.clone())?;
                 Ok(value)
+            }
+            Expr::Logical {
+                left,
+                operator,
+                right,
+            } => {
+                let left_value = self.evaluate(*left)?;
+                match operator.token_type {
+                    TokenType::Or => {
+                        if self.is_truthy(&left_value) {
+                            return Ok(left_value);
+                        }
+                    }
+                    TokenType::And => {
+                        if !self.is_truthy(&left_value) {
+                            return Ok(left_value);
+                        }
+                    }
+                    _ => unreachable!(),
+                };
+
+                self.evaluate(*right)
             }
         }
     }
