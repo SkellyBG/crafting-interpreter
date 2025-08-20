@@ -6,7 +6,7 @@ use std::{
     process,
 };
 
-use crafting_interpreter::Lox;
+use rlox::Lox;
 
 fn run_file(path: &str) -> Result<(), Box<dyn Error + 'static>> {
     let data: Vec<u8> = fs::read(path)?;
