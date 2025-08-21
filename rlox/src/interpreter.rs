@@ -46,68 +46,87 @@ impl Interpreter {
 
     pub fn interpret(&mut self, statements: Vec<Decl>) {
         statements.into_iter().for_each(|s| {
-            if let Err(err) = self.execute(s) {
+            if let Err(err) = self.execute(&s) {
                 Lox::runtime_error(&err.message);
             }
         });
     }
 
-    fn execute(&mut self, statement: Decl) -> Result<(), RuntimeError> {
+    fn execute(&mut self, statement: &Decl) -> Result<(), RuntimeError> {
         match statement {
-            Decl::Stmt(Stmt::Expr(expr)) => {
-                self.evaluate(expr)?;
-            }
-            Decl::Stmt(Stmt::Print(expr)) => {
-                println!("{}", self.evaluate(expr)?);
+            Decl::Stmt(stmt) => {
+                self.execute_stmt(stmt)?;
             }
             Decl::VarDecl {
                 identifier,
                 initializer,
             } => {
-                let value = initializer.map(|expr| self.evaluate(expr)).transpose()?;
+                let value = initializer
+                    .as_ref()
+                    .map(|expr| self.evaluate(expr))
+                    .transpose()?;
 
                 self.environment.define(&identifier.lexeme, value);
-            }
-            Decl::Stmt(Stmt::Block(decls)) => {
-                let prev = replace(&mut self.environment, Environment::new());
-                self.environment.enclosing = Some(Box::new(prev));
-
-                let result = decls.into_iter().try_for_each(|decl| self.execute(decl));
-
-                let prev = take(&mut self.environment.enclosing);
-                self.environment = *prev.expect("Previous environment should always exist!");
-
-                result?;
-            }
-            Decl::Stmt(Stmt::If {
-                condition,
-                then_branch,
-                else_branch,
-            }) => {
-                let condition_truthiness = self.evaluate(condition)?;
-                if self.is_truthy(&condition_truthiness) {
-                    self.execute(Decl::Stmt(*then_branch))?; // TODO: refactor and remove this Stmt wrapping
-                } else if let Some(stmt) = else_branch {
-                    self.execute(Decl::Stmt(*stmt))?;
-                }
             }
         };
 
         Ok(())
     }
 
-    fn evaluate(&mut self, expression: Expr) -> Result<Value, RuntimeError> {
+    fn execute_stmt(&mut self, statement: &Stmt) -> Result<(), RuntimeError> {
+        match statement {
+            Stmt::Expr(expr) => {
+                self.evaluate(expr)?;
+            }
+            Stmt::Print(expr) => {
+                println!("{}", self.evaluate(expr)?);
+            }
+            Stmt::Block(decls) => {
+                let prev = replace(&mut self.environment, Environment::new());
+                self.environment.enclosing = Some(Box::new(prev));
+
+                let result = decls.iter().try_for_each(|decl| self.execute(decl));
+
+                let prev = take(&mut self.environment.enclosing);
+                self.environment = *prev.expect("Previous environment should always exist!");
+
+                result?;
+            }
+            Stmt::If {
+                condition,
+                then_branch,
+                else_branch,
+            } => {
+                let condition_truthiness = self.evaluate(condition)?;
+                if self.is_truthy(&condition_truthiness) {
+                    self.execute_stmt(then_branch)?; // TODO: refactor and remove this Stmt wrapping
+                } else if let Some(stmt) = else_branch {
+                    self.execute_stmt(stmt)?;
+                }
+            }
+            Stmt::While { condition, body } => {
+                let condition_truthiness = self.evaluate(condition)?;
+                while self.is_truthy(&condition_truthiness) {
+                    self.execute_stmt(body)?;
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    fn evaluate(&mut self, expression: &Expr) -> Result<Value, RuntimeError> {
         match expression {
             Expr::Literal(literal) => match literal {
-                Literal::Number(v) => Ok(Value::Number(v)),
-                Literal::String(v) => Ok(Value::String(v)),
+                Literal::Number(v) => Ok(Value::Number(*v)),
+                Literal::String(v) => Ok(Value::String((*v).clone())),
                 Literal::True => Ok(Value::Boolean(true)),
                 Literal::False => Ok(Value::Boolean(false)),
                 Literal::Nil => Ok(Value::Nil),
             },
-            Expr::Grouping { expression } => self.evaluate(*expression),
+            Expr::Grouping { expression } => self.evaluate(expression),
             Expr::Unary { operator, right } => {
-                let value = self.evaluate(*right)?;
+                let value = self.evaluate(right)?;
                 match operator {
                     UnOp::Minus => match value {
                         Value::Number(v) => Ok(Value::Number(-v)),
@@ -123,8 +142,8 @@ impl Interpreter {
                 operator,
                 right,
             } => {
-                let left_value = self.evaluate(*left)?;
-                let right_value = self.evaluate(*right)?;
+                let left_value = self.evaluate(left)?;
+                let right_value = self.evaluate(right)?;
 
                 match (&left_value, &right_value) {
                     (Value::Number(l_v), Value::Number(r_v)) => match operator {
@@ -164,7 +183,7 @@ impl Interpreter {
             }
             Expr::Variable { token } => self.environment.get(token),
             Expr::Assign { token, value } => {
-                let value = self.evaluate(*value)?;
+                let value = self.evaluate(value)?;
                 self.environment.assign(&token.lexeme, value.clone())?;
                 Ok(value)
             }
@@ -173,7 +192,7 @@ impl Interpreter {
                 operator,
                 right,
             } => {
-                let left_value = self.evaluate(*left)?;
+                let left_value = self.evaluate(left)?;
                 match operator.token_type {
                     TokenType::Or => {
                         if self.is_truthy(&left_value) {
@@ -188,7 +207,7 @@ impl Interpreter {
                     _ => unreachable!(),
                 };
 
-                self.evaluate(*right)
+                self.evaluate(right)
             }
         }
     }

@@ -37,7 +37,7 @@ impl Environment {
         }
     }
 
-    pub fn get(&self, token: Token) -> Result<Value, RuntimeError> {
+    pub fn get(&self, token: &Token) -> Result<Value, RuntimeError> {
         let value_option = self.values.get(&token.lexeme).cloned();
 
         match value_option {
