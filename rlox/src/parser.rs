@@ -73,6 +73,8 @@ impl Parser {
             self.if_statement()
         } else if self.match_tokens(&[TokenType::While]) {
             self.while_statement()
+        } else if self.match_tokens(&[TokenType::For]) {
+            self.for_statement()
         } else {
             Ok(self.expression_statement()?)
         }
@@ -126,6 +128,62 @@ impl Parser {
             condition,
             body: Box::new(body),
         })
+    }
+
+    fn for_statement(&mut self) -> Result<Stmt, ParserError> {
+        self.consume(TokenType::LeftParen, "Expect '(' after 'for'.")?;
+        let initializer = if self.match_tokens(&[TokenType::Semicolon]) {
+            None
+        } else if self.match_tokens(&[TokenType::Var]) {
+            Some(self.var_declaration()?)
+        } else {
+            Some(Decl::Stmt(Stmt::Expr(self.expression()?)))
+        };
+
+        let condition = if self.check(&TokenType::Semicolon) {
+            Expr::Literal(Literal::True)
+        } else {
+            self.expression()?
+        };
+
+        self.consume(TokenType::Semicolon, "Expect ';' after loop condition.")?;
+
+        let increment = if self.check(&TokenType::Semicolon) {
+            None
+        } else {
+            Some(self.expression()?)
+        };
+
+        self.consume(TokenType::RightParen, "Expect ')' after for clauses.")?;
+
+        let mut body = self.statement()?;
+
+        /*
+        desugaring for -> while
+
+        for (var i = 0; i < 10; i = i + 1) =>
+        {
+            var i = 0;
+            while (i < 10) {
+                i = i + 1;
+            }
+        }
+
+        */
+        if let Some(incr) = increment {
+            body = Stmt::Block(vec![Decl::Stmt(body), Decl::Stmt(Stmt::Expr(incr))])
+        }
+
+        body = Stmt::While {
+            condition,
+            body: Box::new(body),
+        };
+
+        if let Some(init) = initializer {
+            body = Stmt::Block(vec![init, Decl::Stmt(body)]);
+        }
+
+        Ok(body)
     }
 
     fn expression_statement(&mut self) -> Result<Stmt, ParserError> {

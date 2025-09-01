@@ -105,9 +105,11 @@ impl Interpreter {
                 }
             }
             Stmt::While { condition, body } => {
-                let condition_truthiness = self.evaluate(condition)?;
+                let mut condition_truthiness = self.evaluate(condition)?;
+
                 while self.is_truthy(&condition_truthiness) {
                     self.execute_stmt(body)?;
+                    condition_truthiness = self.evaluate(condition)?;
                 }
             }
         }
